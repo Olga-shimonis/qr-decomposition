@@ -1,5 +1,6 @@
 import numpy as np
-def householder_reflection(A):
+
+def householder(A):
     (r, c) = np.shape(A)
     Q = np.eye(r, dtype=np.complex128)
     R = np.copy(A)
@@ -13,27 +14,56 @@ def householder_reflection(A):
             v = np.zeros_like(v, dtype=np.complex128)
         Q_cnt = np.eye(r, dtype=np.complex128)
         Q_cnt[cnt:, cnt:] -= 2.0 * np.outer(v, np.conj(v))
-        R = np.dot(Q_cnt, R)
-        Q = np.dot(Q, Q_cnt)
+        R = Q_cnt @ R
+        Q = Q @ Q_cnt
     return Q, R
 
-def qr_algorithm(A, iterations=500000):
+def gram_schmidt(A):
+    Q = np.empty_like(A, dtype=np.complex128)
+    cnt = 0
+    for a in A.T:
+        u = np.copy(a)
+        for i in range(0, cnt):
+            proj = np.dot(np.dot(Q[:, i].T, a), Q[:, i])
+            u -= proj
+        e = u / np.linalg.norm(u)
+        Q[:, cnt] = e
+        cnt += 1
+    R = Q.T @ A
+    return Q, R
+
+def qr_householder(A, iter=500000):
     Ak = np.copy(A)
-    n = np.shape(Ak)[0]
+    n, m = np.shape(Ak)
     QQ = np.eye(n, dtype=np.complex128)
-    for k in range(iterations):
+    for _ in range(iter):
         s = Ak.item(n - 1, n - 1)
         smult = s * np.eye(n, dtype=np.complex128)
-        Q, R = householder_reflection(np.subtract(Ak, smult, dtype=np.complex128))
-        Ak = np.add(np.matmul(R, Q), smult)
-        QQ = np.matmul(QQ, Q)
+        Q, R = householder(Ak - smult)
+        Ak = R @ Q + smult
+        QQ = QQ @ Q
+    eig = np.diagonal(Ak)
+    print(eig)
+    return Ak, QQ
+
+def qr_gram_schmidt(A, iter=500000):
+    Ak = np.copy(A)
+    n, m = np.shape(Ak)
+    QQ = np.eye(n, dtype=np.complex128)
+    for _ in range(iter):
+        s = Ak[n - 1, n - 1]
+        smult = s * np.eye(n, dtype=np.complex128)
+        Q, R = gram_schmidt(Ak - smult)
+        Ak = R @ Q + smult
+        QQ = QQ @ Q
     diagonal = np.diagonal(Ak)
     print(diagonal)
     return Ak, QQ
 
-
-matrix = np.array([[10j, 2, 9], [0.004+2j, 5, 6], [7, 8j, 3]], dtype=np.complex128)
-eigenvalues = qr_algorithm(matrix)
-
-# check using build-in function
+matrix = np.array([[5, 2, 2], [-8, -3, -4], [4, 2, 3]], dtype=np.complex128)
+print("householder")
+qr_householder(matrix)
+print("gram-schmidt")
+qr_gram_schmidt(matrix)
+print("build-in")
 print(np.linalg.eigvals(matrix))
