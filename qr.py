@@ -3,7 +3,7 @@ import numpy as np
 def householder(A):
     (r, c) = np.shape(A)
     Q = np.eye(r, dtype=np.complex128)
-    R = np.copy(A)
+    R = A.copy()
     for cnt in range(r - 1):
         x = R[cnt:, cnt]
         e = np.zeros_like(x, dtype=np.complex128)
@@ -20,50 +20,56 @@ def householder(A):
 
 def gram_schmidt(A):
     Q = np.empty_like(A, dtype=np.complex128)
-    cnt = 0
+    column_index = 0
     for a in A.T:
         u = np.copy(a)
-        for i in range(0, cnt):
-            proj = np.dot(np.dot(Q[:, i].T, a), Q[:, i])
-            u -= proj
+        for i in range(0, column_index):
+            u -= np.dot(np.dot(Q[:, i].T, a), Q[:, i])
         e = u / np.linalg.norm(u)
-        Q[:, cnt] = e
-        cnt += 1
+        Q[:, column_index] = e
+        column_index += 1
     R = Q.T @ A
     return Q, R
 
-def qr_householder(A, iter=500000):
-    Ak = np.copy(A)
-    n, m = np.shape(Ak)
+def qr_householder(A):
+    Ak = A.copy()
+    n, m = Ak.shape
     QQ = np.eye(n, dtype=np.complex128)
-    for _ in range(iter):
+
+    for _ in range(n - 1):
         s = Ak.item(n - 1, n - 1)
         smult = s * np.eye(n, dtype=np.complex128)
         Q, R = householder(Ak - smult)
         Ak = R @ Q + smult
         QQ = QQ @ Q
-    eig = np.diagonal(Ak)
-    print(eig)
-    return Ak, QQ
 
-def qr_gram_schmidt(A, iter=500000):
-    Ak = np.copy(A)
-    n, m = np.shape(Ak)
+    eig = np.diagonal(Ak)
+    return eig
+
+def qr_gram_schmidt(A):
+    Ak = A.copy()
+    n, m = Ak.shape
     QQ = np.eye(n, dtype=np.complex128)
-    for _ in range(iter):
+
+    for _ in range(n - 1):
         s = Ak[n - 1, n - 1]
         smult = s * np.eye(n, dtype=np.complex128)
         Q, R = gram_schmidt(Ak - smult)
         Ak = R @ Q + smult
         QQ = QQ @ Q
+
     diagonal = np.diagonal(Ak)
-    print(diagonal)
-    return Ak, QQ
+    return diagonal
 
 matrix = np.array([[5, 2, 2], [-8, -3, -4], [4, 2, 3]], dtype=np.complex128)
+
 print("householder")
-qr_householder(matrix)
+eig = qr_householder(matrix)
+print(eig)
+
 print("gram-schmidt")
-qr_gram_schmidt(matrix)
-print("build-in")
-print(np.linalg.eigvals(matrix))
+diagonal = qr_gram_schmidt(matrix)
+print(diagonal)
+
+print("built-in")
+print((np.linalg.eigvals(matrix))[::-1])
