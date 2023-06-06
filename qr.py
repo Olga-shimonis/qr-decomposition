@@ -59,7 +59,7 @@ def qr_gram_schmidt(A):
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = []
-        for _ in range(50000):
+        for _ in range(n - 1):
             s = Ak[n - 1, n - 1]
             smult = s * np.eye(n, dtype=np.complex128)
             futures.append(executor.submit(gram_schmidt, Ak - smult))
