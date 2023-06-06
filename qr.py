@@ -50,7 +50,7 @@ def qr_householder(A):
             QQ = QQ @ futures[-1].result()[0]
 
     eig = np.diagonal(Ak)
-    return Ak, QQ, eig
+    return eig
 
 def qr_gram_schmidt(A):
     Ak = A.copy()
@@ -67,16 +67,16 @@ def qr_gram_schmidt(A):
             QQ = QQ @ futures[-1].result()[0]
 
     diagonal = np.diagonal(Ak)
-    return Ak, QQ, diagonal
+    return diagonal
 
 matrix = np.array([[5, 2, 2], [-8, -3, -4], [4, 2, 3]], dtype=np.complex128)
 
 print("householder")
-Ak, QQ, eig = qr_householder(matrix)
+eig = qr_householder(matrix)
 print(eig)
 
 print("gram-schmidt")
-Ak, QQ, diagonal = qr_gram_schmidt(matrix)
+diagonal = qr_gram_schmidt(matrix)
 print(diagonal)
 
 print("built-in")
