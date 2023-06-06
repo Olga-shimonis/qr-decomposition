@@ -1,4 +1,8 @@
 import numpy as np
+import concurrent.futures
+import time
+
+start = time.time()
 
 def householder(A):
     (r, c) = np.shape(A)
@@ -36,40 +40,47 @@ def qr_householder(A):
     n, m = Ak.shape
     QQ = np.eye(n, dtype=np.complex128)
 
-    for _ in range(n - 1):
-        s = Ak.item(n - 1, n - 1)
-        smult = s * np.eye(n, dtype=np.complex128)
-        Q, R = householder(Ak - smult)
-        Ak = R @ Q + smult
-        QQ = QQ @ Q
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = []
+        for _ in range(n - 1):
+            s = Ak.item(n - 1, n - 1)
+            smult = s * np.eye(n, dtype=np.complex128)
+            futures.append(executor.submit(householder, Ak - smult))
+            Ak = futures[-1].result()[1] @ futures[-1].result()[0] + smult
+            QQ = QQ @ futures[-1].result()[0]
 
     eig = np.diagonal(Ak)
-    return eig
+    return Ak, QQ, eig
 
 def qr_gram_schmidt(A):
     Ak = A.copy()
     n, m = Ak.shape
     QQ = np.eye(n, dtype=np.complex128)
 
-    for _ in range(n - 1):
-        s = Ak[n - 1, n - 1]
-        smult = s * np.eye(n, dtype=np.complex128)
-        Q, R = gram_schmidt(Ak - smult)
-        Ak = R @ Q + smult
-        QQ = QQ @ Q
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = []
+        for _ in range(n - 1):
+            s = Ak[n - 1, n - 1]
+            smult = s * np.eye(n, dtype=np.complex128)
+            futures.append(executor.submit(gram_schmidt, Ak - smult))
+            Ak = futures[-1].result()[1] @ futures[-1].result()[0] + smult
+            QQ = QQ @ futures[-1].result()[0]
 
     diagonal = np.diagonal(Ak)
-    return diagonal
+    return Ak, QQ, diagonal
 
 matrix = np.array([[5, 2, 2], [-8, -3, -4], [4, 2, 3]], dtype=np.complex128)
 
 print("householder")
-eig = qr_householder(matrix)
+Ak, QQ, eig = qr_householder(matrix)
 print(eig)
 
 print("gram-schmidt")
-diagonal = qr_gram_schmidt(matrix)
+Ak, QQ, diagonal = qr_gram_schmidt(matrix)
 print(diagonal)
 
 print("built-in")
-print((np.linalg.eigvals(matrix))[::-1])
+print(np.linalg.eigvals(matrix)[::-1])
+
+end = time.time() - start
+print(end)
